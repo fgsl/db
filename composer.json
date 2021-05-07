@@ -1,0 +1,31 @@
+{
+	"name" : "fgsl/db",
+	"type" : "framework",
+	"description" : "Extensions of Laminas Db",
+	"keywords" : [
+		"framework",
+		"mvc"
+	],
+	"homepage" : "https://github.com/fgsl/db",
+	"license" : "AGPL-3.0-or-later",
+	"autoload" : {
+		"psr-4" : {
+			"Fgsl\\" : "src/Fgsl"
+		}
+	},
+	"autoload-dev" : {
+		"psr-4" : {
+			"Fgsl\\Test\\" : "tests/"
+		}
+	},
+	"require" : {
+		"php" : "^7.2",
+		"doctrine/orm" : "2.*",
+		"fgsl/mock" : "2.*",
+		"laminas/laminas-db" : "^2.11.0",
+		"phpunit/phpunit" : "^8.5"
+	},
+	"config" : {
+		"secure-http" : false
+	}
+}
