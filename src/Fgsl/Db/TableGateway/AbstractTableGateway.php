@@ -1,8 +1,9 @@
 <?php
+declare(strict_types=1);
 /**
  *  FGSL Framework
  *  @author Flávio Gomes da Silva Lisboa <flavio.lisboa@fgsl.eti.br>
- *  @copyright FGSL 2020
+ *  @copyright FGSL 2020-2025
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
  *  published by the Free Software Foundation, either version 3 of the
@@ -18,7 +19,7 @@
  */
 namespace Fgsl\Db\TableGateway;
 
-use Fgsl\Model\AbstractModel;
+use Fgsl\Model\AbstractActiveRecord;
 use Laminas\Db\ResultSet\ResultSetInterface;
 use Laminas\Db\Sql\Select;
 use Laminas\Db\Sql\Sql;
@@ -26,50 +27,36 @@ use Laminas\Db\TableGateway\TableGatewayInterface;
 
 abstract class AbstractTableGateway
 {
-    /**
-     *
-     * @var string
-     */
-    protected $keyName;
+    protected string $keyName;
 
-    /**
-     *
-     * @var string
-     */
-    protected $modelName;
+    protected string $modelName;
 
-    /**
-     *
-     * @var TableGatewayInterface
-     */
-    protected $tableGateway;
+    protected TableGatewayInterface $tableGateway;
 
-    /**
-     *
-     * @param TableGatewayInterface $tableGateway
-     */
     public function __construct(TableGatewayInterface $tableGateway)
     {
         $this->tableGateway = $tableGateway;
     }
 
-    /**
-     *
-     * @param string $where
-     * @return ResultSetInterface
-     */
-    public function getModels($where = null)
+    public function getModels($where = null, $order = null): ResultSetInterface
     {
-        $resultSet = $this->tableGateway->select($where);
+        if (is_null($order)){
+            $resultSet = $this->tableGateway->select($where);
+        } else {
+            $select = $this->getSelect();
+            $select->order($order);
+            if (!is_null($where)) $select->where($where);
+            $resultSet = $this->tableGateway->selectWith($select);
+        }
+        
         return $resultSet;
     }
 
     /**
      *
      * @param mixed $key
-     * @return AbstractModel
      */
-    public function getModel($key)
+    public function getModel($key): AbstractActiveRecord
     {
         $models = $this->getModels([
             $this->keyName => $key
@@ -85,19 +72,21 @@ abstract class AbstractTableGateway
     }
 
     /**
-     *
-     * @param AbstractModel $model
+     * @return int
      */
-    public function save(AbstractModel $model)
+    public function save(AbstractActiveRecord $model, $excludePrimaryKey = false)
     {
         $primaryKey = $this->keyName;
         $key = $model->$primaryKey;
         $set = $model->getArrayCopy();
         $existingModel = $this->getModel($key);
+        if ($excludePrimaryKey){
+            unset($set[$primaryKey]);
+        }
         if (!isset($existingModel->$primaryKey)) {
-            $this->tableGateway->insert($set);
+            return $this->tableGateway->insert($set);
         } else {
-            $this->tableGateway->update($set, array(
+            return $this->tableGateway->update($set, array(
                 $this->keyName => $key
             ));
         }
@@ -106,47 +95,68 @@ abstract class AbstractTableGateway
     /**
      *
      * @param mixed $key
+     * @return int
      */
     public function delete($key)
     {
-        $this->tableGateway->delete(array(
+        return $this->tableGateway->delete(array(
             $this->keyName => $key
         ));
     }
 
-    /**
-     * @return Sql
-     */
-    public function getSql()
+    public function getSql(): Sql
     {
         return $this->tableGateway->getSql();
     }
 
-    /**
-     *
-     * @return \Laminas\Db\Sql\Select
-     */
-    public function getSelect()
+    public function getSelect(): Select
     {
         $select = new Select($this->tableGateway->getTable());
         return $select;
     }
 
-    /**
-     *
-     * @return string
-     */
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return $this->keyName;
     }
 
-    /**
-     * @return string
-     */
-    public function getTable()
+    public function getTable(): string
     {
         return $this->tableGateway->getTable();
     }
 
+    public function getByField(string $field, $value): AbstractActiveRecord
+    {
+        $where = [
+            $field => $value
+        ];
+        $rowSet = $this->getModels($where);
+        if ($rowSet->count() == 0) {
+            $modelName = $this->modelName;
+            return new $modelName(
+                $this->keyName,
+                $this->tableGateway->getTable(),
+                $this->tableGateway->getAdapter()
+            );
+        }
+        return $rowSet->current();
+    }
+    
+    public function getByFields(array $fields): AbstractActiveRecord
+    {
+        $where = [];
+        foreach($fields as $field => $value){
+            $where[$field] = $value;
+        }
+        $rowSet = $this->getModels($where);
+        if ($rowSet->count() == 0) {
+            $modelName = $this->modelName;
+            return new $modelName(
+                $this->keyName,
+                $this->tableGateway->getTable(),
+                $this->tableGateway->getAdapter()
+            );
+        }
+        return $rowSet->current();
+    }
 }
