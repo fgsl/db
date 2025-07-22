@@ -5,5 +5,5 @@ use Fgsl\Db\TableGateway\AbstractTableGateway;
 
 class TableGateway extends AbstractTableGateway
 {
-    protected $keyName = 'key';
+    protected string $keyName = 'key';
 }
