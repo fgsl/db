@@ -21,7 +21,7 @@
 	"require" : {
 		"php" : "^8.2",
 		"laminas/laminas-db": "^2.20",
-		"fgsl/mock": "^2.0"
+		"fgsl/mock": "^3.0"
 	},
 	"require-dev" : {
 		"phpunit/phpunit" : "^10.5"		
