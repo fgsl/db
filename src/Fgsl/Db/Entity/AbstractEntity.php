@@ -39,7 +39,7 @@ abstract class AbstractEntity
     public function exchangeArray($array)
     {
         foreach ($array as $attribute => $value) {
-            $this->$attribute = $value;
+            @$this->$attribute = $value;
         }
     }
 

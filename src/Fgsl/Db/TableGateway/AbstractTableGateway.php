@@ -115,8 +115,11 @@ abstract class AbstractTableGateway
         return $select;
     }
 
-    public function getKeyName(): string
+    public function getKeyName(): mixed
     {
+        if (str_contains($this->keyName,'-')){
+            return explode('-',$this->keyName);
+        }
         return $this->keyName;
     }
 
